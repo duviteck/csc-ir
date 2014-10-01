@@ -31,7 +31,7 @@ public class InvertedIndex {
             return Collections.emptyList();
         }
 
-        List<String> files = new ArrayList<>(indexes.size());
+        List<String> files = new ArrayList<String>(indexes.size());
         for (int index : indexes) {
             files.add(fileNames.get(index));
         }

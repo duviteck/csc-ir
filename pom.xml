@@ -26,17 +26,13 @@
             <groupId>org.apache.lucene.morphology</groupId>
             <artifactId>russian</artifactId>
             <version>1.0</version>
+            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
             <version>4.8.1</version>
             <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.beust</groupId>
-            <artifactId>jcommander</artifactId>
-            <version>1.30</version>
         </dependency>
     </dependencies>
 
@@ -45,63 +41,51 @@
         <testSourceDirectory>src/com/duviteck/ir/test/java</testSourceDirectory>
 
         <plugins>
-            <!--<plugin>-->
-                <!--<groupId>org.apache.maven.plugins</groupId>-->
-                <!--<artifactId>maven-compiler-plugin</artifactId>-->
-                <!--<version>2.3.2</version>-->
-                <!--<configuration>-->
-                    <!--<source>1.6</source>-->
-                    <!--<target>1.6</target>-->
-                <!--</configuration>-->
-            <!--</plugin>-->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-jar-plugin</artifactId>
-                <configuration>
-                    <finalName>indexer</finalName>
-                    <outputDirectory>${basedir}</outputDirectory>
-                    <archive>
-                        <manifest>
-                            <mainClass>indexer.IndexerRunner</mainClass>
-                            <packageName>indexer</packageName>
-                            <addClasspath>true</addClasspath>
-                            <classpathPrefix>lib/</classpathPrefix>
-                        </manifest>
-                    </archive>
-                </configuration>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-dependency-plugin</artifactId>
-                <version>2.4</version>
+                <artifactId>maven-shade-plugin</artifactId>
                 <executions>
+
                     <execution>
-                        <id>copy-dependencies</id>
+                        <id>indexer</id>
                         <phase>package</phase>
                         <goals>
-                            <goal>copy-dependencies</goal>
+                            <goal>shade</goal>
                         </goals>
                         <configuration>
-                            <includeScope>compile</includeScope>
-                            <outputDirectory>${project.build.directory}/lib</outputDirectory>
+                            <finalName>indexer</finalName>
+                            <outputDirectory>${basedir}</outputDirectory>
+                            <transformers>
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                                    <manifestEntries>
+                                        <Main-Class>indexer.IndexerRunner</Main-Class>
+                                    </manifestEntries>
+                                </transformer>
+                            </transformers>
                         </configuration>
                     </execution>
+
+                    <execution>
+                        <id>searcher</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>shade</goal>
+                        </goals>
+                        <configuration>
+                            <finalName>searcher</finalName>
+                            <outputDirectory>${basedir}</outputDirectory>
+                            <transformers>
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                                    <manifestEntries>
+                                        <Main-Class>searcher.SearcherRunner</Main-Class>
+                                    </manifestEntries>
+                                </transformer>
+                            </transformers>
+                        </configuration>
+                    </execution>
+                    
                 </executions>
             </plugin>
-
-            <!--<plugin>-->
-                <!--<groupId>org.apache.maven.plugins</groupId>-->
-                <!--<artifactId>maven-jar-plugin</artifactId>-->
-                <!--<configuration>-->
-                    <!--<finalName>searcher</finalName>-->
-                    <!--<outputDirectory>${basedir}</outputDirectory>-->
-                    <!--<archive>-->
-                        <!--<manifestEntries>-->
-                            <!--<Main-Class>searcher.SearcherRunner</Main-Class>-->
-                        <!--</manifestEntries>-->
-                    <!--</archive>-->
-                <!--</configuration>-->
-            <!--</plugin>-->
         </plugins>
 
     </build>

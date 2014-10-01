@@ -72,7 +72,7 @@ public class Searcher {
         }
 
         // normalize all terms
-        List<String> terms = new ArrayList<>(tokens.length / 2 + 1);
+        List<String> terms = new ArrayList<String>(tokens.length / 2 + 1);
         for (int i = 0; i < tokens.length; i += 2) {
             terms.add(tokens[i]);
         }
@@ -81,13 +81,13 @@ public class Searcher {
             return null;
         }
 
-        return new Pair<>(queryType, normalizeTerms);
+        return new Pair<QueryType, List<String>>(queryType, normalizeTerms);
     }
 
     private List<String> normalizeTerms(List<String> terms) {
         try {
             RussianAnalyzer analyzer = new RussianAnalyzer();
-            List<String> res = new ArrayList<>(terms.size());
+            List<String> res = new ArrayList<String>(terms.size());
 
             for (String term : terms) {
                 TokenStream tokenStream = analyzer.tokenStream(null, new StringReader(term));
@@ -128,7 +128,7 @@ public class Searcher {
         int l2Len = l2.size();
         int l1Index = 0;
         int l2Index = 0;
-        List<Integer> res = new ArrayList<>(Math.min(l1Len, l2Len));
+        List<Integer> res = new ArrayList<Integer>(Math.min(l1Len, l2Len));
 
         while ((l1Index < l1Len) && (l2Index < l2Len)) {
             int l1Cur = l1.get(l1Index);
@@ -151,7 +151,7 @@ public class Searcher {
         int l2Len = l2.size();
         int l1Index = 0;
         int l2Index = 0;
-        List<Integer> res = new ArrayList<>(l1Len + l2Len);
+        List<Integer> res = new ArrayList<Integer>(l1Len + l2Len);
 
         while ((l1Index < l1Len) && (l2Index < l2Len)) {
             int l1Cur = l1.get(l1Index);

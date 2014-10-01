@@ -33,7 +33,7 @@ public class Indexer {
             throw new IllegalArgumentException("No files found in specified directory");
         }
 
-        Map<String, List<Integer>> termIndexesMap = new HashMap<>();
+        Map<String, List<Integer>> termIndexesMap = new HashMap<String, List<Integer>>();
         int filesCount = fileNames.size();
         for (int i = 0; i < filesCount; i++) {
             indexFile(fileNames.get(i), i, termIndexesMap);
@@ -57,8 +57,8 @@ public class Indexer {
 
     // Traverse specified directory and return names of all inner files, including files in sub-folders
     private List<String> traverseDirectory(File directory) throws IOException {
-        List<String> fileNames = new ArrayList<>();
-        Queue<File> filesOrder = new ArrayDeque<>();
+        List<String> fileNames = new ArrayList<String>();
+        Queue<File> filesOrder = new ArrayDeque<File>();
         filesOrder.add(directory);
 
         while (!filesOrder.isEmpty()) {
@@ -87,7 +87,7 @@ public class Indexer {
 
             List<Integer> termIndexes = termIndexesMap.get(term);
             if (termIndexes == null) {
-                List<Integer> indexes = new ArrayList<>();
+                List<Integer> indexes = new ArrayList<Integer>();
                 indexes.add(fileNumber);
                 termIndexesMap.put(term, indexes);
             } else {

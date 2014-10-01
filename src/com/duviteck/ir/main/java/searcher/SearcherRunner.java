@@ -21,7 +21,11 @@ public class SearcherRunner {
         InvertedIndex invertedIndex;
         try {
             invertedIndex = InvertedIndex.readIndexFromFile(invertedIndexPath);
-        } catch (IOException | ClassNotFoundException e) {
+        } catch (IOException e) {
+            System.out.println("Can't load specified index file");
+            e.printStackTrace();
+            return;
+        } catch (ClassNotFoundException e) {
             System.out.println("Can't load specified index file");
             e.printStackTrace();
             return;

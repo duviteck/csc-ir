@@ -6,6 +6,6 @@ Practical programming for Information Retrieval course in Computer Science Cente
 
 For generating executable JARs, run `mvn package -DskipTests`
 
-*indexer* usage: `java -jar indexer.jar directory_to_index output_index_file_path`
+**indexer** usage: `java -jar indexer.jar directory_to_index output_index_file_path`
 
-*searcher* usage: `java -jar searcher.jar inverted_index_file_path`
+**searcher** usage: `java -jar searcher.jar inverted_index_file_path`

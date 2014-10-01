@@ -9,6 +9,7 @@ import org.apache.lucene.morphology.russian.RussianAnalyzer;
 import java.io.IOException;
 import java.io.StringReader;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -17,12 +18,18 @@ import java.util.List;
 public class Searcher {
 
     private enum QueryType {
-        AND("AND"), OR("OR");
+        AND("AND", "И"),
+        OR("OR", "ИЛИ");
 
-        public final String value;
+        public final ArrayList<String> values;
 
-        QueryType (String value) {
-            this.value = value;
+        QueryType (String... initValues) {
+            values = new ArrayList<String>(initValues.length);
+            Collections.addAll(values, initValues);
+        }
+
+        public boolean contains(String line) {
+            return values.contains(line);
         }
     }
 
@@ -32,19 +39,23 @@ public class Searcher {
         this.invertedIndex = invertedIndex;
     }
 
-    public String processQuery(String queryLine) {
+    public Pair<String, String> processQuery(String queryLine) {
         if (queryLine == null || queryLine.isEmpty()) {
             return null;
         }
         queryLine = queryLine.trim();
 
+        long parseStarted = System.currentTimeMillis();
         Pair<QueryType, List<String>> query = parseQuery(queryLine);
+        long parseTime = System.currentTimeMillis() - parseStarted;
         if (query == null) {
-            return "incorrect query";
+            return Pair.of("incorrect query", buildLogMessage(parseTime, 0));
         }
 
+        long searchStarted = System.currentTimeMillis();
         List<String> resultedFiles = processParsedQuery(query);
-        return buildResultMessage(resultedFiles);
+        long searchTime = System.currentTimeMillis() - searchStarted;
+        return Pair.of(buildResultMessage(resultedFiles), buildLogMessage(parseTime, searchTime));
     }
 
     private Pair<QueryType, List<String>> parseQuery(String queryLine) {
@@ -60,13 +71,13 @@ public class Searcher {
 
         // check that all operators are equal
         QueryType queryType = (tokens.length == 1) ? QueryType.AND
-                : (QueryType.AND.value.equals(tokens[1])) ? QueryType.AND
-                : (QueryType.OR.value.equals(tokens[1])) ? QueryType.OR : null;
+                : (QueryType.AND.contains(tokens[1])) ? QueryType.AND
+                : (QueryType.OR.contains(tokens[1])) ? QueryType.OR : null;
         if (queryType == null) {
             return null;
         }
         for (int i = 3; i < tokens.length; i += 2) {
-            if (!queryType.value.equals(tokens[i])) {
+            if (!queryType.contains(tokens[i])) {
                 return null;
             }
         }
@@ -93,7 +104,7 @@ public class Searcher {
                 TokenStream tokenStream = analyzer.tokenStream(null, new StringReader(term));
                 tokenStream.incrementToken();
                 String normalizedTerm = tokenStream.getAttribute(TermAttribute.class).term();
-                System.out.println(normalizedTerm);
+//                System.out.println(normalizedTerm);
                 res.add(normalizedTerm);
                 tokenStream.close();
             }
@@ -195,5 +206,9 @@ public class Searcher {
                             " and " + (resultedFiles.size() - 2) + " more";
             }
         }
+    }
+
+    private String buildLogMessage(long parseTime, long searchTime) {
+        return String.format("parsing: %d ms, search: %d ms", parseTime, searchTime);
     }
 }

@@ -4,6 +4,7 @@ import model.InvertedIndex;
 import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.analysis.tokenattributes.TermAttribute;
 import org.apache.lucene.morphology.russian.RussianAnalyzer;
+import utils.Logger;
 
 import java.io.*;
 import java.util.*;
@@ -12,8 +13,6 @@ import java.util.*;
  * Created by duviteck. 27 Sep 2014.
  */
 public class Indexer {
-    private static final boolean LOG_ENABLED = true;
-
     private final String directoryToIndexFilename;
 
     public Indexer(String directoryToIndexFilename) {
@@ -41,12 +40,10 @@ public class Indexer {
 
         InvertedIndex res = new InvertedIndex(fileNames, termIndexesMap);
 
-        if (LOG_ENABLED) {
-            long end = System.currentTimeMillis();
-            System.out.println("Index is built in " + (end - start) + " ms");
-            System.out.println("Total files indexed: " + fileNames.size());
-            System.out.println("Total terms indexed: " + termIndexesMap.keySet().size());
-        }
+        long end = System.currentTimeMillis();
+        Logger.log("Index is built in " + (end - start) + " ms");
+        Logger.log("Total files indexed: " + fileNames.size());
+        Logger.log("Total terms indexed: " + termIndexesMap.keySet().size());
 
         return res;
     }
@@ -99,9 +96,7 @@ public class Indexer {
         }
         tokenStream.close();
 
-        if (LOG_ENABLED) {
-            long end = System.currentTimeMillis();
-            System.out.println("Indexed file: " + fileToIndex + " (" + (end - start) + "ms)");
-        }
+        long end = System.currentTimeMillis();
+        Logger.log("Indexed file: " + fileToIndex + " (" + (end - start) + "ms)");
     }
 }

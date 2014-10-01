@@ -1,6 +1,8 @@
 package searcher;
 
+import com.sun.tools.javac.util.Pair;
 import model.InvertedIndex;
+import utils.Logger;
 
 import java.io.IOException;
 import java.util.NoSuchElementException;
@@ -20,6 +22,7 @@ public class SearcherRunner {
         String invertedIndexPath = args[0];
         InvertedIndex invertedIndex;
         try {
+            Logger.log("Loading index from file...");
             invertedIndex = InvertedIndex.readIndexFromFile(invertedIndexPath);
         } catch (IOException e) {
             System.out.println("Can't load specified index file");
@@ -30,10 +33,11 @@ public class SearcherRunner {
             e.printStackTrace();
             return;
         }
+        Logger.log("Index is loaded");
 
         Searcher searcher = new Searcher(invertedIndex);
         Scanner scanner = new Scanner(System.in);
-        System.out.println("Enter the query");
+        System.out.println("Enter the query:");
         while (true) {
             String query;
             try {
@@ -42,11 +46,15 @@ public class SearcherRunner {
                 break;
             }
             if (query == null || query.isEmpty()) {
+                System.out.println("Searcher is stopped");
                 break;
             }
 
-            String result = searcher.processQuery(query);
-            System.out.println("\t" + result);
+            Pair<String, String> result = searcher.processQuery(query);
+            if (result != null) {
+                System.out.println("\t" + result.fst);
+                Logger.log("\t" + result.snd);
+            }
         }
     }
 

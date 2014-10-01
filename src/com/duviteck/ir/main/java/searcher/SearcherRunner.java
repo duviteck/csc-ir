@@ -51,6 +51,6 @@ public class SearcherRunner {
     }
 
     private static void printUsage() {
-        System.out.println("Usage: inverted_index");
+        System.out.println("Usage: inverted_index_file_path");
     }
 }

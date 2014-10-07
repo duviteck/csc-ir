@@ -1,7 +1,7 @@
 package searcher;
 
-import com.sun.tools.javac.util.Pair;
 import model.InvertedIndex;
+import org.apache.commons.lang3.tuple.Pair;
 import utils.Logger;
 
 import java.io.IOException;
@@ -52,8 +52,8 @@ public class SearcherRunner {
 
             Pair<String, String> result = searcher.processQuery(query);
             if (result != null) {
-                System.out.println("\t" + result.fst);
-                Logger.log("\t" + result.snd);
+                System.out.println("\t" + result.getLeft());
+                Logger.log("\t" + result.getRight());
             }
         }
     }

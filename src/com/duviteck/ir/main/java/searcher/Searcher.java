@@ -1,7 +1,7 @@
 package searcher;
 
-import com.sun.tools.javac.util.Pair;
 import model.InvertedIndex;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.analysis.tokenattributes.TermAttribute;
 import org.apache.lucene.morphology.russian.RussianAnalyzer;
@@ -92,7 +92,7 @@ public class Searcher {
             return null;
         }
 
-        return new Pair<QueryType, List<String>>(queryType, normalizeTerms);
+        return Pair.of(queryType, normalizeTerms);
     }
 
     private List<String> normalizeTerms(List<String> terms) {
@@ -118,11 +118,11 @@ public class Searcher {
     }
 
     private List<String> processParsedQuery(Pair<QueryType, List<String>> query) {
-        QueryType queryType = query.fst;
+        QueryType queryType = query.getLeft();
         if (queryType == null) {
             return null;
         }
-        List<String> terms = query.snd;
+        List<String> terms = query.getRight();
         int termsCount = terms.size();
 
         List<Integer> res = invertedIndex.getIndexesForTerm(terms.get(0));

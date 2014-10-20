@@ -7,23 +7,19 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Created by duviteck. 27 Sep 2014.
+ * Created by duviteck. 21 Oct 2014.
  */
-public class InvertedIndex {
+public class CoordinateIndex {
     private final List<String> fileNames;
-    private final Map<String, List<Integer>> termIndexesMap;
+    private final Map<String, FilePositionsIndex> termIndexesMap;
 
-    public InvertedIndex(List<String> fileNames, Map<String, List<Integer>> termIndexesMap) {
+    public CoordinateIndex(List<String> fileNames, Map<String, FilePositionsIndex> termIndexesMap) {
         this.fileNames = fileNames;
         this.termIndexesMap = termIndexesMap;
     }
 
-    public List<Integer> getIndexesForTerm(String term) {
-        List<Integer> res = termIndexesMap.get(term);
-        if (res == null) {
-            res = Collections.emptyList();
-        }
-        return res;
+    public FilePositionsIndex getFilePositionsIndexForTerm(String term) {
+        return termIndexesMap.get(term);
     }
 
     public List<String> getFilesForIndexes(List<Integer> indexes) {
@@ -31,7 +27,7 @@ public class InvertedIndex {
             return Collections.emptyList();
         }
 
-        List<String> files = new ArrayList<String>(indexes.size());
+        List<String> files = new ArrayList<>(indexes.size());
         for (int index : indexes) {
             files.add(fileNames.get(index));
         }
@@ -46,18 +42,18 @@ public class InvertedIndex {
         ous.close();
     }
 
-    public static InvertedIndex readIndexFromFile(String fileName) throws IOException, ClassNotFoundException {
+    public static CoordinateIndex readIndexFromFile(String fileName) throws IOException, ClassNotFoundException {
         FileInputStream fis = new FileInputStream(new File(fileName));
         ObjectInputStream ois = new ObjectInputStream(fis);
         List<String> fileNames = (List<String>) ois.readObject();
-        Map<String, List<Integer>> termIndexesMap = (Map<String, List<Integer>>) ois.readObject();
-        return new InvertedIndex(fileNames, termIndexesMap);
+        Map<String, FilePositionsIndex> termIndexesMap = (Map<String, FilePositionsIndex>) ois.readObject();
+        return new CoordinateIndex(fileNames, termIndexesMap);
     }
 
     @Override
     public boolean equals(Object obj) {
-        if (obj instanceof InvertedIndex) {
-            InvertedIndex newIndex = (InvertedIndex) obj;
+        if (obj instanceof CoordinateIndex) {
+            CoordinateIndex newIndex = (CoordinateIndex) obj;
             return (fileNames.equals(newIndex.fileNames))
                     && (termIndexesMap.equals(newIndex.termIndexesMap));
         } else {

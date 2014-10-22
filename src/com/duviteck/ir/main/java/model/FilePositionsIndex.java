@@ -40,4 +40,20 @@ public class FilePositionsIndex implements Serializable {
             return false;
         }
     }
+
+    public List<Integer> getFileIds() {
+        return fileIds;
+    }
+
+    public int getFileId(int index) {
+        return fileIds.get(index);
+    }
+
+    public List<Integer> getInFilePositions(int fileId) {
+        return inFilePositions.get(fileIds.indexOf(fileId));
+    }
+
+    public int size() {
+        return filesCount;
+    }
 }

@@ -1,155 +1,58 @@
 package searcher;
 
-import model.InvertedIndex;
+import model.CoordinateIndex;
+import model.CoordinateQuery;
+import model.FilePositionsIndex;
 import org.apache.commons.lang3.tuple.Pair;
-import org.apache.lucene.analysis.TokenStream;
-import org.apache.lucene.analysis.tokenattributes.TermAttribute;
-import org.apache.lucene.morphology.russian.RussianAnalyzer;
 
-import java.io.IOException;
-import java.io.StringReader;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 
 /**
  * Created by duviteck. 27 Sep 2014.
  */
 public class Searcher {
+    private final CoordinateIndex searchIndex;
 
-    private enum QueryType {
-        AND("AND", "И"),
-        OR("OR", "ИЛИ");
-
-        public final ArrayList<String> values;
-
-        QueryType (String... initValues) {
-            values = new ArrayList<String>(initValues.length);
-            Collections.addAll(values, initValues);
-        }
-
-        public boolean contains(String line) {
-            return values.contains(line);
-        }
+    public Searcher (CoordinateIndex searchIndex) {
+        this.searchIndex = searchIndex;
     }
 
-    private final InvertedIndex invertedIndex;
-
-    public Searcher (InvertedIndex invertedIndex) {
-        this.invertedIndex = invertedIndex;
-    }
-
-    public Pair<String, String> processQuery(String queryLine) {
-        if (queryLine == null || queryLine.isEmpty()) {
-            return null;
-        }
-        queryLine = queryLine.trim();
-
-        long parseStarted = System.currentTimeMillis();
-        Pair<QueryType, List<String>> query = parseQuery(queryLine);
-        long parseTime = System.currentTimeMillis() - parseStarted;
-        if (query == null) {
-            return Pair.of("incorrect query", buildLogMessage(parseTime, 0));
-        }
-
-        long searchStarted = System.currentTimeMillis();
+    public Pair<String, Long> processQuery(CoordinateQuery query) {
+        long startTime = System.currentTimeMillis();
         List<String> resultedFiles = processParsedQuery(query);
-        long searchTime = System.currentTimeMillis() - searchStarted;
-        return Pair.of(buildResultMessage(resultedFiles), buildLogMessage(parseTime, searchTime));
+        long endTime = System.currentTimeMillis();
+        return Pair.of(buildResultMessage(resultedFiles), endTime - startTime);
     }
 
-    private Pair<QueryType, List<String>> parseQuery(String queryLine) {
-        if (queryLine.isEmpty()) {
-            return null;
-        }
+    private List<String> processParsedQuery(CoordinateQuery query) {
+        int termsCount = query.separators.size();
 
-        String[] tokens = queryLine.split("[\\s]+");    // only tokens between empty spaces
-        // number of tokens should be odd: (tokens.length / 2 + 1) terms + (tokens.length / 2) AND/OR operators
-        if (tokens.length % 2 == 0) {
-            return null;
-        }
-
-        // check that all operators are equal
-        QueryType queryType = (tokens.length == 1) ? QueryType.AND
-                : (QueryType.AND.contains(tokens[1])) ? QueryType.AND
-                : (QueryType.OR.contains(tokens[1])) ? QueryType.OR : null;
-        if (queryType == null) {
-            return null;
-        }
-        for (int i = 3; i < tokens.length; i += 2) {
-            if (!queryType.contains(tokens[i])) {
-                return null;
-            }
-        }
-
-        // normalize all terms
-        List<String> terms = new ArrayList<String>(tokens.length / 2 + 1);
-        for (int i = 0; i < tokens.length; i += 2) {
-            terms.add(tokens[i]);
-        }
-        List<String> normalizeTerms = normalizeTerms(terms);
-        if (normalizeTerms == null) {
-            return null;
-        }
-
-        return Pair.of(queryType, normalizeTerms);
-    }
-
-    private List<String> normalizeTerms(List<String> terms) {
-        try {
-            RussianAnalyzer analyzer = new RussianAnalyzer();
-            List<String> res = new ArrayList<String>(terms.size());
-
-            for (String term : terms) {
-                TokenStream tokenStream = analyzer.tokenStream(null, new StringReader(term));
-                tokenStream.incrementToken();
-                String normalizedTerm = tokenStream.getAttribute(TermAttribute.class).term();
-//                System.out.println(normalizedTerm);
-                res.add(normalizedTerm);
-                tokenStream.close();
-            }
-
-            return res;
-        } catch (IOException e) {
-            System.out.println("Unknown error during normalizing query");
-            e.printStackTrace();
-            return null;
-        }
-    }
-
-    private List<String> processParsedQuery(Pair<QueryType, List<String>> query) {
-        QueryType queryType = query.getLeft();
-        if (queryType == null) {
-            return null;
-        }
-        List<String> terms = query.getRight();
-        int termsCount = terms.size();
-
-        List<Integer> res = invertedIndex.getIndexesForTerm(terms.get(0));
+        FilePositionsIndex res = searchIndex.getFilePositionsIndexForTerm(query.terms.get(0));
         for (int i = 1; i < termsCount; i++) {
-            List<Integer> termIndexes = invertedIndex.getIndexesForTerm(terms.get(i));
-            res = (queryType == QueryType.AND) ? mergeAnd(res, termIndexes) : mergeOr(res, termIndexes);
+            FilePositionsIndex termFilePositionsIndex = searchIndex.getFilePositionsIndexForTerm(query.terms.get(i));
+            CoordinateQuery.CoordinateSeparator separator = query.separators.get(i - 1);
+            res = merge(res, termFilePositionsIndex, separator);
         }
 
-        return invertedIndex.getFilesForIndexes(res);
+        return searchIndex.getFilesForIndexes(res.getFileIds());
     }
 
-    private List<Integer> mergeAnd(List<Integer> l1, List<Integer> l2) {
-        int l1Len = l1.size();
-        int l2Len = l2.size();
+    private FilePositionsIndex merge(FilePositionsIndex i1, FilePositionsIndex i2, CoordinateQuery.CoordinateSeparator separator) {
+        int l1Len = i1.size();
+        int l2Len = i2.size();
         int l1Index = 0;
         int l2Index = 0;
-        List<Integer> res = new ArrayList<Integer>(Math.min(l1Len, l2Len));
+        FilePositionsIndex res = new FilePositionsIndex();
 
         while ((l1Index < l1Len) && (l2Index < l2Len)) {
-            int l1Cur = l1.get(l1Index);
-            int l2Cur = l2.get(l2Index);
+            int l1Cur = i1.getFileId(l1Index);
+            int l2Cur = i2.getFileId(l2Index);
             if (l1Cur < l2Cur) {
                 l1Index++;
             } else if (l1Cur > l2Cur) {
                 l2Index++;
             } else {
-                res.add(l1Cur);
+                mergeFilePositions(res, l1Cur, i1.getInFilePositions(l1Cur), i2.getInFilePositions(l2Cur), separator);
                 l1Index++;
                 l2Index++;
             }
@@ -157,39 +60,62 @@ public class Searcher {
         return res;
     }
 
-    private List<Integer> mergeOr(List<Integer> l1, List<Integer> l2) {
+    private void mergeFilePositions(FilePositionsIndex index, int fileId,
+                                    List<Integer> inFilePositions1,
+                                    List<Integer> inFilePositions2,
+                                    CoordinateQuery.CoordinateSeparator separator) {
+        TreeSet<Integer> resultSet = new TreeSet<>();
+        if (separator.back > 0) {
+            mergeNegativeShift(resultSet, inFilePositions1, inFilePositions2, separator.back);
+        }
+        if (separator.forward > 0) {
+            mergePositiveShift(resultSet, inFilePositions1, inFilePositions2, separator.forward);
+        }
+        for (int inFilePosition : resultSet) {
+            index.addFilePosition(fileId, inFilePosition);
+        }
+    }
+
+    private void mergeNegativeShift(Set<Integer> resultSet, List<Integer> l1, List<Integer> l2, int shift) {
         int l1Len = l1.size();
         int l2Len = l2.size();
         int l1Index = 0;
         int l2Index = 0;
-        List<Integer> res = new ArrayList<Integer>(l1Len + l2Len);
 
         while ((l1Index < l1Len) && (l2Index < l2Len)) {
             int l1Cur = l1.get(l1Index);
             int l2Cur = l2.get(l2Index);
-            if (l1Cur < l2Cur) {
-                res.add(l1Cur);
+            if (l2Cur > l1Cur) {
                 l1Index++;
-            } else if (l1Cur > l2Cur) {
-                res.add(l2Cur);
+            } else {
+                if (l1Cur - l2Cur <= shift) {
+                    resultSet.add(l2Cur);
+                }
+                l2Index++;
+            }
+        }
+    }
+
+    private void mergePositiveShift(Set<Integer> resultSet, List<Integer> l1, List<Integer> l2, int shift) {
+        int l1Len = l1.size();
+        int l2Len = l2.size();
+        int l1Index = 0;
+        int l2Index = 0;
+
+        while ((l1Index < l1Len) && (l2Index < l2Len)) {
+            int l1Cur = l1.get(l1Index);
+            int l2Cur = l2.get(l2Index);
+            if (l1Cur > l2Cur) {
                 l2Index++;
             } else {
-                res.add(l1Cur);
-                l1Index++;
-                l2Index++;
+                if (l2Cur - l1Cur <= shift) {
+                    resultSet.add(l2Cur);
+                    l2Index++;
+                } else {
+                    l1Index++;
+                }
             }
         }
-        if (l1Index < l1Len) {
-            for (int i = l1Index; i < l1Len; i++) {
-                res.add(l1.get(i));
-            }
-        }
-        if (l2Index < l2Len) {
-            for (int i = l2Index; i < l2Len; i++) {
-                res.add(l2.get(i));
-            }
-        }
-        return res;
     }
 
     private String buildResultMessage(List<String> resultedFiles) {
@@ -206,9 +132,5 @@ public class Searcher {
                             " and " + (resultedFiles.size() - 2) + " more";
             }
         }
-    }
-
-    private String buildLogMessage(long parseTime, long searchTime) {
-        return String.format("parsing: %d ms, search: %d ms", parseTime, searchTime);
     }
 }

@@ -25,7 +25,7 @@ public class Searcher {
     }
 
     private List<String> processParsedQuery(CoordinateQuery query) {
-        int termsCount = query.separators.size();
+        int termsCount = query.terms.size();
 
         FilePositionsIndex res = searchIndex.getFilePositionsIndexForTerm(query.terms.get(0));
         for (int i = 1; i < termsCount; i++) {
@@ -34,10 +34,15 @@ public class Searcher {
             res = merge(res, termFilePositionsIndex, separator);
         }
 
-        return searchIndex.getFilesForIndexes(res.getFileIds());
+
+        return (res != null) ? searchIndex.getFilesForIndexes(res.getFileIds()) : null;
     }
 
     private FilePositionsIndex merge(FilePositionsIndex i1, FilePositionsIndex i2, CoordinateQuery.CoordinateSeparator separator) {
+        if (i1 == null || i2 == null) {
+            return null;
+        }
+
         int l1Len = i1.size();
         int l2Len = i2.size();
         int l1Index = 0;
@@ -89,6 +94,7 @@ public class Searcher {
                 l1Index++;
             } else {
                 if (l1Cur - l2Cur <= shift) {
+                    System.out.format("negative %d %d", l1Cur, l2Cur);
                     resultSet.add(l2Cur);
                 }
                 l2Index++;
@@ -109,6 +115,7 @@ public class Searcher {
                 l2Index++;
             } else {
                 if (l2Cur - l1Cur <= shift) {
+                    System.out.format("positive %d %d", l1Cur, l2Cur);
                     resultSet.add(l2Cur);
                     l2Index++;
                 } else {

@@ -1,5 +1,6 @@
 package indexer;
 
+import model.CoordinateIndex;
 import model.InvertedIndex;
 import utils.Logger;
 
@@ -21,10 +22,10 @@ public class IndexerRunner {
 
         Indexer indexer = new Indexer(folderName);
         try {
-            InvertedIndex invertedIndex = indexer.build();
+            CoordinateIndex index = indexer.build();
 
             Logger.log("Dumping index into file...");
-            invertedIndex.writeIndexToFile(outputFile);
+            index.writeIndexToFile(outputFile);
             Logger.log("File is saved");
         } catch (IOException e) {
             e.printStackTrace();

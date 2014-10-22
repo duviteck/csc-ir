@@ -1,6 +1,7 @@
 package indexer;
 
-import model.InvertedIndex;
+import model.CoordinateIndex;
+import model.FilePositionsIndex;
 import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.analysis.tokenattributes.TermAttribute;
 import org.apache.lucene.morphology.russian.RussianAnalyzer;
@@ -19,7 +20,7 @@ public class Indexer {
         this.directoryToIndexFilename = directoryToIndexFilename;
     }
 
-    public InvertedIndex build() throws IOException {
+    public CoordinateIndex build() throws IOException {
         long start = System.currentTimeMillis();
 
         File directoryToIndex = new File(directoryToIndexFilename);
@@ -32,13 +33,13 @@ public class Indexer {
             throw new IllegalArgumentException("No files found in specified directory");
         }
 
-        Map<String, List<Integer>> termIndexesMap = new HashMap<String, List<Integer>>();
+        Map<String, FilePositionsIndex> termIndexesMap = new HashMap<>();
         int filesCount = fileNames.size();
         for (int i = 0; i < filesCount; i++) {
             indexFile(fileNames.get(i), i, termIndexesMap);
         }
 
-        InvertedIndex res = new InvertedIndex(fileNames, termIndexesMap);
+        CoordinateIndex res = new CoordinateIndex(fileNames, termIndexesMap);
 
         long end = System.currentTimeMillis();
         Logger.log("Index is built in " + (end - start) + " ms");
@@ -54,8 +55,8 @@ public class Indexer {
 
     // Traverse specified directory and return names of all inner files, including files in sub-folders
     private List<String> traverseDirectory(File directory) throws IOException {
-        List<String> fileNames = new ArrayList<String>();
-        Queue<File> filesOrder = new ArrayDeque<File>();
+        List<String> fileNames = new ArrayList<>();
+        Queue<File> filesOrder = new ArrayDeque<>();
         filesOrder.add(directory);
 
         while (!filesOrder.isEmpty()) {
@@ -73,26 +74,26 @@ public class Indexer {
         return fileNames;
     }
 
-    private void indexFile(String fileToIndex, int fileNumber, Map<String, List<Integer>> termIndexesMap) throws IOException {
+    private void indexFile(String fileToIndex, int fileNumber, Map<String, FilePositionsIndex> termIndexesMap) throws IOException {
         long start = System.currentTimeMillis();
 
         RussianAnalyzer analyzer = new RussianAnalyzer();
         TokenStream tokenStream = analyzer.tokenStream(null, new FileReader(fileToIndex));
 
+        int tokenNumber = 0;
         while (tokenStream.incrementToken()) {
             String term = tokenStream.getAttribute(TermAttribute.class).term();
 
-            List<Integer> termIndexes = termIndexesMap.get(term);
-            if (termIndexes == null) {
-                List<Integer> indexes = new ArrayList<Integer>();
-                indexes.add(fileNumber);
-                termIndexesMap.put(term, indexes);
+            FilePositionsIndex filePositionsIndex = termIndexesMap.get(term);
+            if (filePositionsIndex == null) {
+                FilePositionsIndex newFilePositionsIndex = new FilePositionsIndex();
+                newFilePositionsIndex.addFilePosition(fileNumber, tokenNumber);
+                termIndexesMap.put(term, newFilePositionsIndex);
             } else {
-                int lastValue = termIndexes.get(termIndexes.size() - 1);
-                if (lastValue != fileNumber) {  // so term indexes don't have repeated values
-                    termIndexes.add(fileNumber);
-                }
+                filePositionsIndex.addFilePosition(fileNumber, tokenNumber);
             }
+
+            tokenNumber++;
         }
         tokenStream.close();
 

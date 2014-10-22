@@ -17,4 +17,7 @@ As soon as index will be generated and saved into file, process will stop.
 # Searcher
 **Usage**: `java -jar searcher.jar inverted_index_file_path` <br>
 Searcher will ask for new queries eternally, until you pass an empty line or kill the process. <br>
-Operators: **AND**, **OR**, **И**, **ИЛИ**. Upper case is required.
+Searcher handles queries like <br> 
+**term1 /N term2 /+M term3 /-K term4** <br>
+and don't handles queries like <br>
+**term1 AND term2** or **term1 OR term2**

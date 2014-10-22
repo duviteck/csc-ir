@@ -94,7 +94,7 @@ public class Searcher {
                 l1Index++;
             } else {
                 if (l1Cur - l2Cur <= shift) {
-                    System.out.format("negative %d %d", l1Cur, l2Cur);
+//                    System.out.format("negative %d %d\n", l1Cur, l2Cur);
                     resultSet.add(l2Cur);
                 }
                 l2Index++;
@@ -115,7 +115,7 @@ public class Searcher {
                 l2Index++;
             } else {
                 if (l2Cur - l1Cur <= shift) {
-                    System.out.format("positive %d %d", l1Cur, l2Cur);
+//                    System.out.format("positive %d %d\n", l1Cur, l2Cur);
                     resultSet.add(l2Cur);
                     l2Index++;
                 } else {

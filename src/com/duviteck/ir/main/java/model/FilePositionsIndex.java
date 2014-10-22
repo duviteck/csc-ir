@@ -10,23 +10,20 @@ import java.util.List;
 public class FilePositionsIndex implements Serializable {
     private List<Integer> fileIds;
     private List<List<Integer>> inFilePositions;
-    private transient int filesCount;
 
     public FilePositionsIndex() {
         fileIds = new ArrayList<>();
         inFilePositions = new ArrayList<>();
-        filesCount = 0;
     }
 
     public void addFilePosition(int fileId, int position) {
-        if (filesCount > 0 && fileIds.get(filesCount - 1) == fileId) {
-            inFilePositions.get(filesCount - 1).add(position);
+        if (fileIds.size() > 0 && fileIds.get(fileIds.size() - 1) == fileId) {
+            inFilePositions.get(fileIds.size() - 1).add(position);
         } else {
             fileIds.add(fileId);
             List<Integer> positionsList = new ArrayList<>();
             positionsList.add(position);
             inFilePositions.add(positionsList);
-            filesCount++;
         }
     }
 
@@ -54,6 +51,6 @@ public class FilePositionsIndex implements Serializable {
     }
 
     public int size() {
-        return filesCount;
+        return fileIds.size();
     }
 }

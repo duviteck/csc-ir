@@ -31,7 +31,7 @@ public class SearcherTest {
         }
         Logger.log("Index is loaded");
 
-        String query = "платон /5 сократ";
+        String query = "платон /100 сократ";
 
         Searcher searcher = new Searcher(searchIndex);
         long parseTime;
